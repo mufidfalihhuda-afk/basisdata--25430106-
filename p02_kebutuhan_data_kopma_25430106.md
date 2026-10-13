@@ -31,13 +31,15 @@ Dokumen sumber yang digunakan untuk memahami kebutuhan data Kopma antara lain:
 
 | Entitas kandidat        | Elemen data utama                                               | Sumber                |
 | ----------------------- | --------------------------------------------------------------- | --------------------- |
-| Anggota                 | nomor anggota, NIM, nama, program studi, nomor HP, status aktif | Formulir pendaftaran  |
+| Anggota | nomor anggota, NIM, nama, program studi, nomor HP, status aktif, poin_loyalitas | Formulir pendaftaran dan catatan transaksi penjualan |
 | Barang                  | kode, nama, kategori, harga jual, stok, batas minimum stok      | Daftar barang, faktur |
 | Penjualan               | nomor nota, tanggal-jam, kasir, anggota (opsional), bayar       | Nota penjualan        |
 | Detail penjualan        | nomor nota, barang, qty, harga saat transaksi                   | Nota penjualan        |
 | Petugas                 | kode petugas, nama, peran (kasir/gudang/ketua)                  | Wawancara             |
 | Pemasok                 | kode, nama, telepon, alamat                                     | Faktur pemasok        |
 | Pembelian dan detailnya | nomor faktur, tanggal, pemasok, barang, qty, harga beli         | Faktur pemasok        |
+
+
 
 ## 5. Aturan bisnis
 
@@ -49,6 +51,9 @@ Dokumen sumber yang digunakan untuk memahami kebutuhan data Kopma antara lain:
 | AB-04 | Harga jual yang dipakai pada nota disimpan per baris dan tidak berubah meski harga barang kemudian naik.          |
 | AB-05 | NIM anggota unik; pencarian anggota dapat dilakukan lewat nomor anggota atau NIM.                                 |
 | AB-06 | Pesanan pembelian dibuat bila stok kurang dari batas minimum barang tersebut.                                     |
+| AB-07 | Setiap kelipatan Rp10.000 dari belanja anggota menghasilkan 1 poin loyalitas.                                     |
+| AB-08 | Setiap 50 poin loyalitas dapat ditukar dengan potongan harga sebesar Rp5.000.                                     |
+| AB-09 | Penukaran poin hanya dapat dilakukan jika saldo poin anggota mencukupi, dan saldo poin tidak boleh menjadi negatif. |
 
 ## 6. Kebutuhan informasi
 
@@ -58,6 +63,8 @@ Dokumen sumber yang digunakan untuk memahami kebutuhan data Kopma antara lain:
 | KI-02 | Lima barang terlaris per bulan berdasarkan qty    | Detail penjualan, barang             |
 | KI-03 | Barang dengan stok di bawah batas minimum         | Barang                               |
 | KI-04 | Sepuluh anggota dengan belanja terbesar per bulan | Penjualan, detail penjualan, anggota |
+| KI-05 | Saldo poin loyalitas setiap anggota               | Anggota |
+| KI-06 | Riwayat perolehan dan penukaran poin loyalitas anggota | Anggota, Penjualan |
 
 ## 7. Matriks CRUD
 
@@ -68,13 +75,13 @@ Keterangan:
 * **U** = Update / mengubah data
 * **D** = Delete / menghapus data
 
-| Proses                 | Anggota | Barang | Penjualan | Detail Penjualan | Pemasok | Pembelian |
-| ---------------------- | ------- | ------ | --------- | ---------------- | ------- | --------- |
-| PB-01 Daftar anggota   | C       |        |           |                  |         |           |
-| PB-02 Catat penjualan  | R       | R, U   | C         | C                |         |           |
-| PB-03 Pesan ke pemasok |         | R      |           |                  | R       | C         |
-| PB-04 Terima barang    |         | U      |           |                  | R       | U         |
-| PB-05 Laporan bulanan  | R       | R      | R         | R                | R       |           |
+| Proses | Anggota | Barang | Penjualan | Detail Penjualan | Pemasok | Pembelian |
+|---|---|---|---|---|---|---|
+| PB-01 Daftar anggota | C | | | | | |
+| PB-02 Catat penjualan | R, U | R, U | C | C | | |
+| PB-03 Pesan ke pemasok | | R | | | R | C |
+| PB-04 Terima barang | | U | | | R | U |
+| PB-05 Laporan bulanan | R | R | R | R | R | |
 
 ## 8. Kamus data awal
 
@@ -86,6 +93,7 @@ Keterangan:
 | `no_nota_penjualan`             | Nomor nota penjualan      | PJ-2609-0142 | Unik per nota                   | Kasir            |
 | `harga_satuan_detail_penjualan` | Harga jual saat transaksi | 4000         | Bilangan bulat ≥ 0 (rupiah)     | Kasir            |
 | `stok_barang`                   | Jumlah barang tersedia    | 35           | Bilangan bulat ≥ 0 sesuai AB-03 | Petugas gudang   |
+| `poin_loyalitas`                | Saldo poin loyalitas anggota | 75 | Bilangan bulat ≥ 0; bertambah berdasarkan AB-07 dan berkurang 50 poin setiap penukaran yang berhasil sesuai AB-08 | Ketua |
 
 ## 9. Kebutuhan non-fungsional data
 
@@ -125,3 +133,28 @@ Beberapa isu kualitas data yang perlu diperhatikan adalah:
 6. **Data pemasok**
 
    * Matriks CRUD menunjukkan bahwa entitas Pemasok belum memiliki proses yang melakukan Create. Hal ini menunjukkan bahwa proses pemeliharaan data pemasok belum tercantum dalam daftar proses bisnis dan perlu diperhatikan pada tahap analisis berikutnya.
+
+**## 11. Perbaikan Kebutuhan Kabur**
+
+Tiga pernyataan kebutuhan kabur diperbaiki agar mempunyai kriteria yang jelas dan dapat diuji.
+
+**1. Keamanan data anggota**
+
+- Sebelum: “Data anggota harus aman.”
+- Sesudah: “Nomor HP anggota hanya boleh dilihat oleh ketua koperasi. Pengguna selain ketua koperasi tidak boleh dapat melihat nomor HP anggota.”
+
+Kebutuhan ini dapat diuji dengan mengakses data anggota menggunakan akun ketua koperasi dan akun pengguna lain, kemudian memastikan hanya akun ketua koperasi yang dapat melihat nomor HP.
+
+**2. Kecepatan pencarian barang**
+
+- Sebelum: “Sistem harus cepat mencari barang.”
+- Sesudah: “Sistem harus dapat menampilkan hasil pencarian barang berdasarkan kode barang atau nama barang dalam waktu maksimal 2 detik untuk basis data yang berisi sampai dengan 10.000 barang.”
+
+Kebutuhan ini dapat diuji dengan melakukan pencarian menggunakan kode barang dan nama barang, lalu mengukur waktu sampai hasil ditampilkan.
+
+**3. Keakuratan laporan stok**
+
+- Sebelum: “Laporan stok harus akurat.”
+- Sesudah: “Jumlah stok yang ditampilkan dalam laporan harus sama dengan saldo stok pada data barang setelah seluruh transaksi penerimaan dan penjualan yang berhasil diproses diperhitungkan.”
+
+Kebutuhan ini dapat diuji dengan membandingkan jumlah stok dalam laporan dengan saldo stok pada data barang setelah transaksi selesai diproses.
