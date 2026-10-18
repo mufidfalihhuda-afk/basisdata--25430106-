@@ -178,3 +178,56 @@ Berdasarkan dependensi fungsional yang telah diidentifikasi, penentu yang merupa
 Normalisasi dilakukan untuk mengurangi pengulangan data, mencegah anomali ubah, sisip, dan hapus, serta menjaga konsistensi informasi. Tahap 1NF menghilangkan kelompok berulang, 2NF menghilangkan ketergantungan pada sebagian kunci komposit, dan 3NF menghilangkan ketergantungan transitif yang tidak diinginkan.
 
 Selanjutnya, relasi hasil normalisasi dicocokkan dengan skema kanonik Kopma yang menggunakan kunci pengganti dan kunci unik. Pemeriksaan BCNF dilakukan berdasarkan dependensi fungsional serta kunci kandidat pada setiap tabel. Keputusan untuk menghitung nilai turunan, bukan menyimpannya dalam tabel operasional, juga membantu menjaga konsistensi hasil perhitungan transaksi.
+
+## E. Latihan dan Modifikasi
+
+### 1. Normalisasi Nomor Telepon Pemasok
+
+Kopma membutuhkan penyimpanan beberapa nomor telepon untuk setiap pemasok. Jika beberapa nomor telepon disimpan dalam satu kolom pada tabel `pemasok`, data menjadi tidak atomik dan tidak memenuhi bentuk normal pertama (1NF).
+
+Untuk mengatasinya, data nomor telepon dipisahkan ke dalam relasi baru bernama `telepon_pemasok`.
+
+**Relasi pemasok:**
+
+`PEMASOK (id_pemasok, kode_pemasok, nama_pemasok, alamat_pemasok)`
+
+- PK: `id_pemasok`
+- UQ: `kode_pemasok`
+
+**Relasi telepon pemasok:**
+
+`TELEPON_PEMASOK (id_pemasok, no_telepon)`
+
+- PK: `(id_pemasok, no_telepon)`
+- FK: `id_pemasok` mengacu pada `PEMASOK(id_pemasok)`
+
+Dengan pemisahan ini, satu pemasok dapat memiliki beberapa nomor telepon. Setiap nomor telepon disimpan sebagai satu nilai dalam satu baris, sedangkan data pemasok tidak perlu diulang untuk setiap nomor telepon.
+
+### 2. Pelanggaran 3NF dan Anomali Ubah
+
+Jika atribut `nama_anggota` disimpan di tabel `penjualan`, maka nama anggota akan berulang pada setiap transaksi yang dilakukan oleh anggota yang sama.
+
+Contoh data:
+
+| no_nota_penjualan | no_anggota | nama_anggota |
+|---|---|---|
+| N001 | A-0001 | Andi |
+| N002 | A-0001 | Andi |
+
+Pada data tersebut, `no_nota_penjualan` menentukan `no_anggota`, sedangkan `no_anggota` menentukan `nama_anggota`. Dengan demikian, terdapat dependensi transitif:
+
+`no_nota_penjualan → no_anggota → nama_anggota`
+
+Hal ini melanggar 3NF karena atribut `nama_anggota` bergantung secara transitif pada kunci primer `no_nota_penjualan`, bukan secara langsung pada kunci primer tersebut.
+
+**Contoh kueri yang menunjukkan anomali ubah:**
+
+```sql
+UPDATE penjualan
+SET nama_anggota = 'Andi Pratama'
+WHERE no_nota_penjualan = 'N001';
+```
+
+Kueri tersebut hanya mengubah nama anggota pada nota `N001`. Sementara itu, nama anggota pada nota `N002` masih tersimpan sebagai `Andi`, sehingga data anggota yang sama menjadi tidak konsisten.
+
+**Perbaikan:** atribut `nama_anggota` disimpan pada tabel `anggota`, sedangkan tabel `penjualan` hanya menyimpan `id_anggota` sebagai kunci tamu. Dengan demikian, perubahan nama cukup dilakukan satu kali pada tabel `anggota` dan dapat digunakan oleh seluruh transaksi anggota tersebut.
